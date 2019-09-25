@@ -29,7 +29,7 @@ grab_dtm_test  <- grab_dtm[26:35, ]
 grab_train_labels <- grab_labelled[1:25, ]$sentiment
 grab_test_labels  <- grab_labelled[26:35, ]$sentiment
 
-# check that the proportion of spam is similar
+# check that the proportion  is similar
 prop.table(table(grab_train_labels))
 
 prop.table(table(grab_test_labels))
@@ -78,11 +78,31 @@ convert_counts <- function(x)
 train_dtm_binary <- apply(train_dtm, MARGIN = 2, convert_counts)
 test_dtm_binary  <- apply(test_dtm, MARGIN = 2, convert_counts)
 
+# Create the model
 grab_classifier <- naiveBayes(as.matrix(train_dtm_binary), grab_train$sentiment)          
 
+# Apply model to predict test dataset
 grab_test_pred <- predict(grab_classifier, as.matrix(test_dtm_binary))
 head(grab_test_pred)
 
+# Confussion Matrix
 CrossTable(grab_test_pred, grab_test$sentiment,
            prop.chisq = FALSE, prop.t = FALSE, prop.r = FALSE,
            dnn = c('predicted', 'actual'))
+
+
+# Import Prediction Data
+pred_labelled <- read.csv("data-raw/01_grab-predict.csv")
+
+# Create a corpus from the sentences
+pred_corpus <- VCorpus(VectorSource(pred_labelled$text))
+
+# create a document-term sparse matrix directly from the corpus
+pred_dtm <- DocumentTermMatrix(pred_corpus)
+
+# Crate a binary matrix
+pred_dtm_binary  <- apply(pred_dtm, MARGIN = 2, convert_counts)
+
+# Apply Prediction 
+grab_predict_pred <- predict(grab_classifier, as.matrix(pred_dtm_binary))
+head(grab_predict_pred)
